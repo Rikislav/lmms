@@ -29,11 +29,20 @@
 
 #include <QLabel>
 #include <QFrame>
+#include <QLineEdit>
 #include <QComboBox>
+#include <QScrollArea>
+#include <QVBoxLayout>
 
 #include "ToolPlugin.h"
 #include "ToolPluginView.h"
 #include "InstrumentFunctions.h"
+#include "Knob.h"
+#include "LcdWidget.h"
+#include "AutomatableSlider.h"
+#include "LedCheckbox.h"
+#include "ComboBox.h"
+
 
 class ComboBox;
 class QPushButton;
@@ -58,21 +67,21 @@ class chordNoteWidget : public QWidget, public ModelView
 	Q_OBJECT
 public:
 	chordNoteWidget(chordNoteModel * _model, QWidget *_parent);
-	~chordNoteWidget(){}
+	~chordNoteWidget();
 
 	chordNoteModel * m_chordNoteModel;
-	Knob *m_volumeKnob;
-	Knob *m_panKnob;
+	Knob m_volumeKnob;
+	Knob m_panKnob;
 	//
-	QLabel *m_keyLabel;
-	LcdWidget *m_keyLcd;
-	AutomatableSlider *m_keySlider;
-	LedCheckBox *m_activeLed;
-	LedCheckBox *m_silencedLed;
-	LedCheckBox *m_bareLed;
+	QLabel m_keyLabel;
+	LcdWidget m_keyLcd;
+	AutomatableSlider m_keySlider;
+	LedCheckBox m_activeLed;
+	LedCheckBox m_silencedLed;
+	LedCheckBox m_bareLed;
 
-	QPushButton *m_delButton;
-	QPushButton *m_cloneButton;
+	QPushButton m_delButton;
+	QPushButton m_cloneButton;
 
 
 	//the position of the semitone in the vector
@@ -199,22 +208,13 @@ private:
 	Chord * m_chord;
 
 	//the chord name
-	QLineEdit * m_nameLineEdit;
+	QLineEdit m_nameLineEdit;
 
-
-	QVector<chordNoteWidget *> m_chordnoteWidgets;
-
-
-	QScrollArea * m_scrollArea;
-	QVBoxLayout * m_scrollAreaLayout;
-
-	//the widget layout where to put all the chordNoteWidgets
-	QHBoxLayout *m_chordsWidgetLayout;
-	QWidget *m_chordsWidget;
-
+	QScrollArea m_scrollArea;
+	QVBoxLayout m_scrollAreaLayout;
 
 	//The combobox of the available chord combinations
-	ComboBox * m_chordsComboBox;
+	ComboBox m_chordsComboBox;
 
 signals:
 	void lineEditChange();
