@@ -33,7 +33,7 @@
 #include "InstrumentTrack.h"
 #include "Mixer.h"
 #include "PresetPreviewPlayHandle.h"
-
+#include "stdshims.h"
 
 
 InstrumentFunctionNoteStacking::InstrumentFunctionNoteStacking( Model * _parent ) :
@@ -171,15 +171,6 @@ void InstrumentFunctionNoteStacking::processNote( NotePlayHandle * _n )
 										_n, -1, NotePlayHandle::OriginNoteStacking )
 							);
 				}
-				// create copy of base-note
-				Note note_copy( _n->length(), 0, sub_note_key, _n->getVolume(), _n->getPanning(), _n->detuning() );
-
-				// create sub-note-play-handle, only note is
-				// different
-				Engine::mixer()->addPlayHandle( 
-						NotePlayHandleManager::acquire( _n->instrumentTrack(), _n->offset(), _n->frames(), note_copy,
-									_n, -1, NotePlayHandle::OriginNoteStacking )
-						);
 			}
 		}
 	}
