@@ -171,6 +171,15 @@ void InstrumentFunctionNoteStacking::processNote( NotePlayHandle * _n )
 										_n, -1, NotePlayHandle::OriginNoteStacking )
 							);
 				}
+				// create copy of base-note
+				Note note_copy( _n->length(), 0, sub_note_key, _n->getVolume(), _n->getPanning(), _n->detuning() );
+
+				// create sub-note-play-handle, only note is
+				// different
+				Engine::mixer()->addPlayHandle( 
+						NotePlayHandleManager::acquire( _n->instrumentTrack(), _n->offset(), _n->frames(), note_copy,
+									_n, -1, NotePlayHandle::OriginNoteStacking )
+						);
 			}
 		}
 	}
@@ -230,16 +239,16 @@ InstrumentFunctionArpeggio::InstrumentFunctionArpeggio( Model * _parent ) :
 		m_arpModel.addItem( m_chordTable->at( i )->getName() );
 	}
 
-	m_arpDirectionModel.addItem( tr( "Up" ), new PixmapLoader( "arp_up" ) );
-	m_arpDirectionModel.addItem( tr( "Down" ), new PixmapLoader( "arp_down" ) );
-	m_arpDirectionModel.addItem( tr( "Up and down" ), new PixmapLoader( "arp_up_and_down" ) );
-	m_arpDirectionModel.addItem( tr( "Down and up" ), new PixmapLoader( "arp_up_and_down" ) );
-	m_arpDirectionModel.addItem( tr( "Random" ), new PixmapLoader( "arp_random" ) );
+	m_arpDirectionModel.addItem( tr( "Up" ), make_unique<PixmapLoader>( "arp_up" ) );
+	m_arpDirectionModel.addItem( tr( "Down" ), make_unique<PixmapLoader>( "arp_down" ) );
+	m_arpDirectionModel.addItem( tr( "Up and down" ), make_unique<PixmapLoader>( "arp_up_and_down" ) );
+	m_arpDirectionModel.addItem( tr( "Down and up" ), make_unique<PixmapLoader>( "arp_up_and_down" ) );
+	m_arpDirectionModel.addItem( tr( "Random" ), make_unique<PixmapLoader>( "arp_random" ) );
 	m_arpDirectionModel.setInitValue( ArpDirUp );
 
-	m_arpModeModel.addItem( tr( "Free" ), new PixmapLoader( "arp_free" ) );
-	m_arpModeModel.addItem( tr( "Sort" ), new PixmapLoader( "arp_sort" ) );
-	m_arpModeModel.addItem( tr( "Sync" ), new PixmapLoader( "arp_sync" ) );
+	m_arpModeModel.addItem( tr( "Free" ), make_unique<PixmapLoader>( "arp_free" ) );
+	m_arpModeModel.addItem( tr( "Sort" ), make_unique<PixmapLoader>( "arp_sort" ) );
+	m_arpModeModel.addItem( tr( "Sync" ), make_unique<PixmapLoader>( "arp_sync" ) );
 
 	//on chord Table change we reload the chord and scale combo boxes models
 	connect( m_chordTable, SIGNAL( chordNameChanged() ), this, SLOT ( updateChordTable() ) );
@@ -520,9 +529,9 @@ void InstrumentFunctionArpeggio::processNote( NotePlayHandle * _n )
 																			(volume_t)qRound( sub_note_vol * vol_level ), sub_note_pan,
 																			_n->detuning() ),_n, -1, NotePlayHandle::OriginArpeggio ) );
 
-			// update counters
-			frames_processed += arp_frames;
-			cur_frame += arp_frames;
+		// update counters
+		frames_processed += arp_frames;
+		cur_frame += arp_frames;
 
 		} // end cst.active block
 	}
@@ -571,13 +580,10 @@ void InstrumentFunctionArpeggio::loadSettings( const QDomElement & _this )
 	// Keep compatibility with version 0.2.1 file format
 	if( _this.hasAttribute( "arpsyncmode" ) )
 	{
-	 	m_arpTimeKnob->setSyncMode( 
+	 	m_arpTimeKnob->setSyncMode(
  		( tempoSyncKnob::tempoSyncMode ) _this.attribute(
  						 "arpsyncmode" ).toInt() );
 	}*/
 
 	m_arpModeModel.loadSettings( _this, "arpmode" );
 }
-
-
-

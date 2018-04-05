@@ -208,7 +208,7 @@ const InstrumentFunctionNoteStacking::Chord & InstrumentFunctionNoteStacking::Ch
 
 
 
->>>>>>> upstream/master
+>>>>>>> 9af7821eb1686c292cf037c21caf5cb2a8770ebf
 InstrumentFunctionNoteStacking::InstrumentFunctionNoteStacking( Model * _parent ) :
 	Model( _parent, tr( "Chords" ) ),
 	m_chordsEnabledModel( false, this ),
@@ -355,7 +355,7 @@ void InstrumentFunctionNoteStacking::processNote( NotePlayHandle * _n )
 						NotePlayHandleManager::acquire( _n->instrumentTrack(), _n->offset(), _n->frames(), note_copy,
 									_n, -1, NotePlayHandle::OriginNoteStacking )
 						);
->>>>>>> upstream/master
+>>>>>>> 9af7821eb1686c292cf037c21caf5cb2a8770ebf
 			}
 		}
 	}
@@ -434,7 +434,7 @@ InstrumentFunctionArpeggio::InstrumentFunctionArpeggio( Model * _parent ) :
 	m_arpModeModel.addItem( tr( "Free" ), make_unique<PixmapLoader>( "arp_free" ) );
 	m_arpModeModel.addItem( tr( "Sort" ), make_unique<PixmapLoader>( "arp_sort" ) );
 	m_arpModeModel.addItem( tr( "Sync" ), make_unique<PixmapLoader>( "arp_sync" ) );
->>>>>>> upstream/master
+>>>>>>> 9af7821eb1686c292cf037c21caf5cb2a8770ebf
 }
 
 
