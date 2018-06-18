@@ -24,6 +24,8 @@
 
 #include "vestige.h"
 
+#include <memory>
+
 #include <QDropEvent>
 #include <QMessageBox>
 #include <QPainter>
@@ -72,6 +74,59 @@ Plugin::Descriptor PLUGIN_EXPORT vestige_plugin_descriptor =
 } ;
 
 }
+
+
+class vstSubWin : public QMdiSubWindow
+{
+public:
+	vstSubWin( QWidget * _parent ) :
+		QMdiSubWindow( _parent )
+	{
+		setAttribute( Qt::WA_DeleteOnClose, false );
+		setWindowFlags( Qt::WindowCloseButtonHint );
+	}
+
+	virtual ~vstSubWin()
+	{
+	}
+
+	virtual void closeEvent( QCloseEvent * e )
+	{
+		// ignore close-events - for some reason otherwise the VST GUI
+		// remains hidden when re-opening
+		hide();
+		e->ignore();
+	}
+};
+
+
+class VstInstrumentPlugin : public VstPlugin
+{
+public:
+	using VstPlugin::VstPlugin;
+
+	void createUI( QWidget *parent ) override
+	{
+		Q_UNUSED(parent);
+		if ( embedMethod() != "none" ) {
+			m_pluginSubWindow.reset(new vstSubWin( gui->mainWindow()->workspace() ));
+			VstPlugin::createUI( m_pluginSubWindow.get() );
+			m_pluginSubWindow->setWidget(pluginWidget());
+		} else {
+			VstPlugin::createUI( nullptr );
+		}
+	}
+
+	/// Overwrite editor() to return the sub window instead of the embed widget
+	/// itself. This makes toggleUI() and related functions toggle the
+	/// sub window's visibility.
+	QWidget* editor() override
+	{
+		return m_pluginSubWindow.get();
+	}
+private:
+	unique_ptr<QMdiSubWindow> m_pluginSubWindow;
+};
 
 
 QPixmap * VestigeInstrumentView::s_artwork = NULL;
@@ -127,6 +182,12 @@ void vestigeInstrument::loadSettings( const QDomElement & _this )
 	if( m_plugin != NULL )
 	{
 		m_plugin->loadSettings( _this );
+
+		if ( _this.attribute( "guivisible" ).toInt() ) {
+			m_plugin->showUI();
+		} else {
+			m_plugin->hideUI();
+		}
 
 		const QMap<QString, QString> & dump = m_plugin->parameterDump();
 		paramCount = dump.size();
@@ -263,12 +324,12 @@ void vestigeInstrument::loadFile( const QString & _file )
 	{
 		tf = TextFloat::displayMessage(
 				tr( "Loading plugin" ),
-				tr( "Please wait while loading VST-plugin..." ),
+				tr( "Please wait while loading the VST plugin..." ),
 				PLUGIN_NAME::getIconPixmap( "logo", 24, 24 ), 0 );
 	}
 
 	m_pluginMutex.lock();
-	m_plugin = new VstPlugin( m_pluginDLL );
+	m_plugin = new VstInstrumentPlugin( m_pluginDLL );
 	if( m_plugin->failed() )
 	{
 		m_pluginMutex.unlock();
@@ -279,6 +340,7 @@ void vestigeInstrument::loadFile( const QString & _file )
 		return;
 	}
 
+	m_plugin->createUI(nullptr);
 	m_plugin->showUI();
 
 	if( set_ch_name )
@@ -413,12 +475,7 @@ VestigeInstrumentView::VestigeInstrumentView( Instrument * _instrument,
 							"select_file" ) );
 	connect( m_openPluginButton, SIGNAL( clicked() ), this,
 						SLOT( openPlugin() ) );
-	ToolTip::add( m_openPluginButton, tr( "Open other VST-plugin" ) );
-
-	m_openPluginButton->setWhatsThis(
-		tr( "Click here, if you want to open another VST-plugin. After "
-			"clicking on this button, a file-open-dialog appears "
-			"and you can select your file." ) );
+	ToolTip::add( m_openPluginButton, tr( "Open VST plugin" ) );
 
 	m_managePluginButton = new PixmapButton( this, "" );
 	m_managePluginButton->setCheckable( false );
@@ -430,10 +487,7 @@ VestigeInstrumentView::VestigeInstrumentView( Instrument * _instrument,
 							"controls" ) );
 	connect( m_managePluginButton, SIGNAL( clicked() ), this,
 						SLOT( managePlugin() ) );
-	ToolTip::add( m_managePluginButton, tr( "Control VST-plugin from LMMS host" ) );
-
-	m_managePluginButton->setWhatsThis(
-		tr( "Click here, if you want to control VST-plugin from host." ) );
+	ToolTip::add( m_managePluginButton, tr( "Control VST plugin from LMMS host" ) );
 
 
 	m_openPresetButton = new PixmapButton( this, "" );
@@ -446,10 +500,7 @@ VestigeInstrumentView::VestigeInstrumentView( Instrument * _instrument,
 							"project_open", 20, 20 ) );
 	connect( m_openPresetButton, SIGNAL( clicked() ), this,
 						SLOT( openPreset() ) );
-	ToolTip::add( m_openPresetButton, tr( "Open VST-plugin preset" ) );
-
-	m_openPresetButton->setWhatsThis(
-		tr( "Click here, if you want to open another *.fxp, *.fxb VST-plugin preset." ) );
+	ToolTip::add( m_openPresetButton, tr( "Open VST plugin preset" ) );
 
 
 	m_rolLPresetButton = new PixmapButton( this, "" );
@@ -466,9 +517,6 @@ VestigeInstrumentView::VestigeInstrumentView( Instrument * _instrument,
 
 	m_rolLPresetButton->setShortcut( Qt::Key_Minus );
 
-	m_rolLPresetButton->setWhatsThis(
-		tr( "Click here, if you want to switch to another VST-plugin preset program." ) );
-
 
 	m_savePresetButton = new PixmapButton( this, "" );
 	m_savePresetButton->setCheckable( false );
@@ -481,9 +529,6 @@ VestigeInstrumentView::VestigeInstrumentView( Instrument * _instrument,
 	connect( m_savePresetButton, SIGNAL( clicked() ), this,
 						SLOT( savePreset() ) );
 	ToolTip::add( m_savePresetButton, tr( "Save preset" ) );
-
-	m_savePresetButton->setWhatsThis(
-		tr( "Click here, if you want to save current VST-plugin preset program." ) );
 
 
 	m_rolRPresetButton = new PixmapButton( this, "" );
@@ -500,10 +545,6 @@ VestigeInstrumentView::VestigeInstrumentView( Instrument * _instrument,
 
 	m_rolRPresetButton->setShortcut( Qt::Key_Plus );
 
-	m_rolRPresetButton->setWhatsThis(
-		tr( "Click here, if you want to switch to another VST-plugin preset program." ) );
-
-
 
 	m_selPresetButton = new QPushButton( tr( "" ), this );
 	m_selPresetButton->setGeometry( 228, 201, 16, 16 );
@@ -514,8 +555,6 @@ VestigeInstrumentView::VestigeInstrumentView( Instrument * _instrument,
 
 
 	m_selPresetButton->setIcon( embed::getIconPixmap( "stepper-down" ) );
-	m_selPresetButton->setWhatsThis(
-		tr( "Click here to select presets that are currently loaded in VST." ) );
 
 	m_selPresetButton->setMenu(menu);
 
@@ -526,9 +565,6 @@ VestigeInstrumentView::VestigeInstrumentView( Instrument * _instrument,
 	m_toggleGUIButton->setFont( pointSize<8>( m_toggleGUIButton->font() ) );
 	connect( m_toggleGUIButton, SIGNAL( clicked() ), this,
 							SLOT( toggleGUI() ) );
-	m_toggleGUIButton->setWhatsThis(
-		tr( "Click here to show or hide the graphical user interface "
-			"(GUI) of your VST-plugin." ) );
 
 	QPushButton * note_off_all_btn = new QPushButton( tr( "Turn off all "
 							"notes" ), this );
@@ -611,7 +647,7 @@ void VestigeInstrumentView::modelChanged()
 
 void VestigeInstrumentView::openPlugin()
 {
-	FileDialog ofd( NULL, tr( "Open VST-plugin" ) );
+	FileDialog ofd( NULL, tr( "Open VST plugin" ) );
 
 	// set filters
 	QStringList types;
@@ -817,7 +853,7 @@ void VestigeInstrumentView::paintEvent( QPaintEvent * )
 				m_vi->m_plugin->name()/* + QString::number(
 						m_plugin->version() )*/
 					:
-				tr( "No VST-plugin loaded" );
+				tr( "No VST plugin loaded" );
 	QFont f = p.font();
 	f.setBold( true );
 	p.setFont( pointSize<10>( f ) );
@@ -878,16 +914,12 @@ manageVestigeInstrumentView::manageVestigeInstrumentView( Instrument * _instrume
 	m_syncButton = new QPushButton( tr( "VST Sync" ), this );
 	connect( m_syncButton, SIGNAL( clicked() ), this,
 							SLOT( syncPlugin() ) );
-	m_syncButton->setWhatsThis(
-		tr( "Click here if you want to synchronize all parameters with VST plugin." ) );
 
 	l->addWidget( m_syncButton, 0, 0, 1, 2, Qt::AlignLeft );
 
 	m_displayAutomatedOnly = new QPushButton( tr( "Automated" ), this );
 	connect( m_displayAutomatedOnly, SIGNAL( clicked() ), this,
 							SLOT( displayAutomatedOnly() ) );
-	m_displayAutomatedOnly->setWhatsThis(
-		tr( "Click here if you want to display automated parameters only." ) );
 
 	l->addWidget( m_displayAutomatedOnly, 0, 1, 1, 2, Qt::AlignLeft );
 
@@ -895,8 +927,6 @@ manageVestigeInstrumentView::manageVestigeInstrumentView( Instrument * _instrume
 	m_closeButton = new QPushButton( tr( "    Close    " ), widget );
 	connect( m_closeButton, SIGNAL( clicked() ), this,
 							SLOT( closeWindow() ) );
-	m_closeButton->setWhatsThis(
-		tr( "Close VST plugin knob-controller window." ) );
 
 	l->addWidget( m_closeButton, 0, 2, 1, 7, Qt::AlignLeft );
 

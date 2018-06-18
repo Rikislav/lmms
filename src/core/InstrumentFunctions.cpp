@@ -52,11 +52,17 @@ InstrumentFunctionNoteStacking::InstrumentFunctionNoteStacking( Model * _parent 
 	connect( m_chordTable, SIGNAL( chordNameChanged() ), this, SLOT ( updateChordTable() ) );
 }
 
+
+
+
 InstrumentFunctionNoteStacking::~InstrumentFunctionNoteStacking()
 {
 }
 
-void InstrumentFunctionNoteStacking::processNote( NotePlayHandle * _n ) 
+
+
+
+void InstrumentFunctionNoteStacking::processNote( NotePlayHandle * _n )
 {
 	// Getting base note key
 	const int base_note_key = _n->key();
@@ -209,7 +215,6 @@ void InstrumentFunctionNoteStacking::updateChordTable()
 	m_chordsModel.setValue( v );
 }
 
-
 InstrumentFunctionArpeggio::InstrumentFunctionArpeggio( Model * _parent ) :
 	Model( _parent, tr( "Arpeggio" ) ),
 	m_arpEnabledModel( false ),
@@ -281,7 +286,7 @@ void InstrumentFunctionArpeggio::processNote( NotePlayHandle * _n )
 	if( _n->origin() == NotePlayHandle::OriginArpeggio ||
 		_n->origin() == NotePlayHandle::OriginNoteStacking ||
 		!m_arpEnabledModel.value() ||
-		( _n->isReleased() && _n->releaseFramesDone() >= _n->actualReleaseFramesToDo() ) )
+		_n->isReleased() )
 	{
 		return;
 	}
@@ -348,7 +353,6 @@ void InstrumentFunctionArpeggio::processNote( NotePlayHandle * _n )
 		// Skip notes randomly
 		if( m_arpSkipModel.value() )
 		{
-
 			if( 100 * ( (float) rand() / (float)( RAND_MAX + 1.0f ) ) < m_arpSkipModel.value() )
 			{
 				// Set master note to prevent the note to extend over skipped notes
@@ -549,7 +553,6 @@ void InstrumentFunctionArpeggio::saveSettings( QDomDocument & _doc, QDomElement 
 	m_arpTimeModel.saveSettings( _doc, _this, "arptime" );
 	m_arpGateModel.saveSettings( _doc, _this, "arpgate" );
 	m_arpDirectionModel.saveSettings( _doc, _this, "arpdir" );
-
 	m_arpModeModel.saveSettings( _doc, _this, "arpmode" );
 }
 
@@ -567,14 +570,5 @@ void InstrumentFunctionArpeggio::loadSettings( const QDomElement & _this )
 	m_arpTimeModel.loadSettings( _this, "arptime" );
 	m_arpGateModel.loadSettings( _this, "arpgate" );
 	m_arpDirectionModel.loadSettings( _this, "arpdir" );
-/*
-	// Keep compatibility with version 0.2.1 file format
-	if( _this.hasAttribute( "arpsyncmode" ) )
-	{
-	 	m_arpTimeKnob->setSyncMode(
- 		( tempoSyncKnob::tempoSyncMode ) _this.attribute(
- 						 "arpsyncmode" ).toInt() );
-	}*/
-
 	m_arpModeModel.loadSettings( _this, "arpmode" );
 }

@@ -36,7 +36,6 @@
 #include <QLibrary>
 #include <QSplitter>
 #include <QUrl>
-#include <QWhatsThis>
 
 #include "AboutDialog.h"
 #include "AudioDummy.h"
@@ -416,9 +415,6 @@ void MainWindow::finalize()
 							tr( "Help" ),
 							this, SLOT( help() ) );
 	}
-	help_menu->addAction( embed::getIconPixmap( "whatsthis" ),
-					tr( "What's This?" ),
-					this, SLOT( enterWhatsThisMode() ) );
 
 // Prevent dangling separator at end of menu per https://bugreports.qt.io/browse/QTBUG-40071
 #if !(defined(LMMS_BUILD_APPLE) && (QT_VERSION >= 0x050000) && (QT_VERSION < 0x050600))
@@ -470,15 +466,9 @@ void MainWindow::finalize()
 							SLOT( onExportProject() ),
 								m_toolBar );
 
-	ToolButton * whatsthis = new ToolButton(
-				embed::getIconPixmap( "whatsthis" ),
-					tr( "What's this?" ),
-					this, SLOT( enterWhatsThisMode() ),
-								m_toolBar );
-
 	m_metronomeToggle = new ToolButton(
 				embed::getIconPixmap( "metronome" ),
-				tr( "Toggle metronome" ),
+				tr( "Metronome" ),
 				this, SLOT( onToggleMetronome() ),
 							m_toolBar );
 	m_metronomeToggle->setCheckable(true);
@@ -491,109 +481,74 @@ void MainWindow::finalize()
 	m_toolBarLayout->addWidget( project_open_recent, 0, 4 );
 	m_toolBarLayout->addWidget( project_save, 0, 5 );
 	m_toolBarLayout->addWidget( project_export, 0, 6 );
-	m_toolBarLayout->addWidget( whatsthis, 0, 7 );
-	m_toolBarLayout->addWidget( m_metronomeToggle, 0, 8 );
+	m_toolBarLayout->addWidget( m_metronomeToggle, 0, 7 );
 
 
 	// window-toolbar
 	ToolButton * song_editor_window = new ToolButton(
 					embed::getIconPixmap( "songeditor" ),
-					tr( "Show/hide Song-Editor" ) + " (F5)",
+					tr( "Song Editor" ) + " (F5)",
 					this, SLOT( toggleSongEditorWin() ),
 								m_toolBar );
 	song_editor_window->setShortcut( Qt::Key_F5 );
-	song_editor_window->setWhatsThis(
-		tr( "By pressing this button, you can show or hide the "
-			"Song-Editor. With the help of the Song-Editor you can "
-			"edit song-playlist and specify when which track "
-			"should be played. "
-			"You can also insert and move samples (e.g. "
-			"rap samples) directly into the playlist." ) );
 
 
 	ToolButton * bb_editor_window = new ToolButton(
 					embed::getIconPixmap( "bb_track_btn" ),
-					tr( "Show/hide Beat+Bassline Editor" ) +
+					tr( "Beat+Bassline Editor" ) +
 									" (F6)",
 					this, SLOT( toggleBBEditorWin() ),
 								m_toolBar );
 	bb_editor_window->setShortcut( Qt::Key_F6 );
-	bb_editor_window->setWhatsThis(
-		tr( "By pressing this button, you can show or hide the "
-			"Beat+Bassline Editor. The Beat+Bassline Editor is "
-			"needed for creating beats, and for opening, adding, and "
-			"removing channels, and for cutting, copying and pasting "
-			"beat and bassline-patterns, and for other things like "
-			"that." ) );
 
 
 	ToolButton * piano_roll_window = new ToolButton(
 						embed::getIconPixmap( "piano" ),
-						tr( "Show/hide Piano-Roll" ) +
+						tr( "Piano Roll" ) +
 									" (F7)",
 					this, SLOT( togglePianoRollWin() ),
 								m_toolBar );
 	piano_roll_window->setShortcut( Qt::Key_F7 );
-	piano_roll_window->setWhatsThis(
-			tr( "Click here to show or hide the "
-				"Piano-Roll. With the help of the Piano-Roll "
-				"you can edit melodies in an easy way."
-				) );
 
 	ToolButton * automation_editor_window = new ToolButton(
 					embed::getIconPixmap( "automation" ),
-					tr( "Show/hide Automation Editor" ) +
+					tr( "Automation Editor" ) +
 									" (F8)",
 					this,
 					SLOT( toggleAutomationEditorWin() ),
 					m_toolBar );
 	automation_editor_window->setShortcut( Qt::Key_F8 );
-	automation_editor_window->setWhatsThis(
-			tr( "Click here to show or hide the "
-				"Automation Editor. With the help of the "
-				"Automation Editor you can edit dynamic values "
-				"in an easy way."
-				) );
 
 	ToolButton * fx_mixer_window = new ToolButton(
 					embed::getIconPixmap( "fx_mixer" ),
-					tr( "Show/hide FX Mixer" ) + " (F9)",
+					tr( "FX Mixer" ) + " (F9)",
 					this, SLOT( toggleFxMixerWin() ),
 					m_toolBar );
 	fx_mixer_window->setShortcut( Qt::Key_F9 );
-	fx_mixer_window->setWhatsThis(
-		tr( "Click here to show or hide the "
-			"FX Mixer. The FX Mixer is a very powerful tool "
-			"for managing effects for your song. You can insert "
-			"effects into different effect-channels." ) );
-
-	ToolButton * project_notes_window = new ToolButton(
-					embed::getIconPixmap( "project_notes" ),
-					tr( "Show/hide project notes" ) +
-								" (F10)",
-					this, SLOT( toggleProjectNotesWin() ),
-								m_toolBar );
-	project_notes_window->setShortcut( Qt::Key_F10 );
-	project_notes_window->setWhatsThis(
-		tr( "Click here to show or hide the "
-			"project notes window. In this window you can put "
-			"down your project notes.") );
 
 	ToolButton * controllers_window = new ToolButton(
 					embed::getIconPixmap( "controller" ),
 					tr( "Show/hide controller rack" ) +
-								" (F11)",
+								" (F10)",
 					this, SLOT( toggleControllerRack() ),
 								m_toolBar );
-	controllers_window->setShortcut( Qt::Key_F11 );
+	controllers_window->setShortcut( Qt::Key_F10 );
+
+	ToolButton * project_notes_window = new ToolButton(
+					embed::getIconPixmap( "project_notes" ),
+					tr( "Show/hide project notes" ) +
+								" (F11)",
+					this, SLOT( toggleProjectNotesWin() ),
+								m_toolBar );
+	project_notes_window->setShortcut( Qt::Key_F11 );
 
 	m_toolBarLayout->addWidget( song_editor_window, 1, 1 );
 	m_toolBarLayout->addWidget( bb_editor_window, 1, 2 );
 	m_toolBarLayout->addWidget( piano_roll_window, 1, 3 );
 	m_toolBarLayout->addWidget( automation_editor_window, 1, 4 );
 	m_toolBarLayout->addWidget( fx_mixer_window, 1, 5 );
-	m_toolBarLayout->addWidget( project_notes_window, 1, 6 );
-	m_toolBarLayout->addWidget( controllers_window, 1, 7 );
+	m_toolBarLayout->addWidget( controllers_window, 1, 6 );
+	m_toolBarLayout->addWidget( project_notes_window, 1, 7 );
 	m_toolBarLayout->setColumnStretch( 100, 1 );
 
 	// setup-dialog opened before?
@@ -839,13 +794,6 @@ void MainWindow::restoreWidgetState( QWidget * _w, const QDomElement & _de )
 
 void MainWindow::emptySlot()
 {
-}
-
-
-
-void MainWindow::enterWhatsThisMode()
-{
-	QWhatsThis::enterWhatsThisMode();
 }
 
 
@@ -1233,14 +1181,13 @@ void MainWindow::updateViewMenu()
 			      tr( "FX Mixer" ) + " (F9)",
 			      this, SLOT( toggleFxMixerWin() )
 		);
-	m_viewMenu->addAction(embed::getIconPixmap( "project_notes" ),
-			      tr( "Project Notes" ) +	" (F10)",
-			      this, SLOT( toggleProjectNotesWin() )
-		);
 	m_viewMenu->addAction(embed::getIconPixmap( "controller" ),
-			      tr( "Controller Rack" ) +
-			      " (F11)",
+			      tr( "Controller Rack" ) + " (F10)",
 			      this, SLOT( toggleControllerRack() )
+		);
+	m_viewMenu->addAction(embed::getIconPixmap( "project_notes" ),
+			      tr( "Project Notes" ) + " (F11)",
+			      this, SLOT( toggleProjectNotesWin() )
 		);
 
 	m_viewMenu->addSeparator();
@@ -1503,43 +1450,32 @@ void MainWindow::fillTemplatesMenu()
 {
 	m_templatesMenu->clear();
 
-	QDir user_d( ConfigManager::inst()->userTemplateDir() );
-	QStringList templates = user_d.entryList( QStringList( "*.mpt" ),
-						QDir::Files | QDir::Readable );
+	auto addTemplatesFromDir = [this]( QDir dir ) {
+		QStringList templates = dir.entryList( QStringList( "*.mpt" ),
+							QDir::Files | QDir::Readable );
 
-	m_custom_templates_count = templates.count();
-	for( QStringList::iterator it = templates.begin();
-						it != templates.end(); ++it )
-	{
-		m_templatesMenu->addAction(
-					embed::getIconPixmap( "project_file" ),
-					( *it ).left( ( *it ).length() - 4 ) );
+		if ( templates.size() && ! m_templatesMenu->actions().isEmpty() )
+		{
+			m_templatesMenu->addSeparator();
+		}
+
+		for( QStringList::iterator it = templates.begin();
+							it != templates.end(); ++it )
+		{
+			m_templatesMenu->addAction(
+						embed::getIconPixmap( "project_file" ),
+						( *it ).left( ( *it ).length() - 4 ).replace("&", "&&") );
 #ifdef LMMS_BUILD_APPLE
-		m_templatesMenu->actions().last()->setIconVisibleInMenu(false); // QTBUG-44565 workaround
-		m_templatesMenu->actions().last()->setIconVisibleInMenu(true);
+			m_templatesMenu->actions().last()->setIconVisibleInMenu(false); // QTBUG-44565 workaround
+			m_templatesMenu->actions().last()->setIconVisibleInMenu(true);
 #endif
-	}
+		}
 
-	QDir d( ConfigManager::inst()->factoryProjectsDir() + "templates" );
-	templates = d.entryList( QStringList( "*.mpt" ),
-						QDir::Files | QDir::Readable );
+		return templates.size();
+	};
 
-
-	if( m_custom_templates_count > 0 && !templates.isEmpty() )
-	{
-		m_templatesMenu->addSeparator();
-	}
-	for( QStringList::iterator it = templates.begin();
-						it != templates.end(); ++it )
-	{
-		m_templatesMenu->addAction(
-					embed::getIconPixmap( "project_file" ),
-					( *it ).left( ( *it ).length() - 4 ).replace("&", "&&") );
-#ifdef LMMS_BUILD_APPLE
-		m_templatesMenu->actions().last()->setIconVisibleInMenu(false); // QTBUG-44565 workaround
-		m_templatesMenu->actions().last()->setIconVisibleInMenu(true);
-#endif
-	}
+	m_custom_templates_count = addTemplatesFromDir( ConfigManager::inst()->userTemplateDir() );
+	addTemplatesFromDir( ConfigManager::inst()->factoryProjectsDir() + "templates" );
 }
 
 

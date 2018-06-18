@@ -22,8 +22,7 @@ INCLUDE(FindPkgConfig)
 
 STRING(TOUPPER          "${CMAKE_PROJECT_NAME}" PROJECT_NAME_UCASE)
 
-# Updated by maintenance tasks
-SET(PROJECT_YEAR 2017)
+SET(PROJECT_YEAR 2018)
 
 SET(PROJECT_AUTHOR      "LMMS Developers")
 SET(PROJECT_URL         "https://lmms.io")
@@ -33,7 +32,7 @@ SET(PROJECT_COPYRIGHT   "2008-${PROJECT_YEAR} ${PROJECT_AUTHOR}")
 SET(VERSION_MAJOR       "1")
 SET(VERSION_MINOR       "2")
 SET(VERSION_RELEASE     "0")
-SET(VERSION_STAGE       "rc5")
+SET(VERSION_STAGE       "rc6")
 SET(VERSION_BUILD       "0")
 SET(VERSION             "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}")
 IF(VERSION_STAGE)
@@ -520,6 +519,22 @@ FILE(REMOVE include/lmmsconfig.h)
 
 FILE(GLOB LMMS_INCLUDES "${CMAKE_SOURCE_DIR}/include/*.h")
 LIST(SORT LMMS_INCLUDES)
+
+# Get list of all committers from git history, ordered by number of commits.
+# The CONTRIBUTORS file is used by AboutDialog. This information can be provided
+# with -DCONTRIBUTORS=/path/to/CONTRIBUTORS instead. For instance, to generate
+# this file for version 1.1.3, the command is:
+# 	git shortlog -sne v1.1.3 | cut -c8-
+FIND_PACKAGE(Git)
+IF(GIT_FOUND AND NOT CONTRIBUTORS)
+	SET(CONTRIBUTORS "${CMAKE_BINARY_DIR}/CONTRIBUTORS")
+	EXECUTE_PROCESS(
+		COMMAND "${GIT_EXECUTABLE}" shortlog -sne
+		COMMAND cut -c8-
+		OUTPUT_FILE "${CONTRIBUTORS}"
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+		TIMEOUT 1)
+ENDIF()
 
 # we somehow have to make LMMS-binary depend on MOC-files
 ADD_FILE_DEPENDENCIES("${CMAKE_BINARY_DIR}/lmmsconfig.h")

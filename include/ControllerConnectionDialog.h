@@ -36,6 +36,7 @@
 #include "AutomatableModel.h"
 
 
+class QLabel;
 class QLineEdit;
 class QListView;
 class QScrollArea;
@@ -67,6 +68,7 @@ public slots:
 	void selectController();
 	void midiToggled();
 	void userToggled();
+	void userSelected();
 	void autoDetectToggled();
 	void enableAutoDetect( QAction * _a );
 

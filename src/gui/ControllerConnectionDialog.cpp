@@ -23,12 +23,12 @@
  *
  */
 
+#include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QMessageBox>
-#include <QLabel>
 
 #include "ControllerConnectionDialog.h"
 #include "ControllerConnection.h"
@@ -164,7 +164,7 @@ private:
 
 
 ControllerConnectionDialog::ControllerConnectionDialog( QWidget * _parent, 
-																												const AutomatableModel * _target_model ) :
+		const AutomatableModel * _target_model ) :
 	QDialog( _parent ),
 	m_readablePorts( NULL ),
 	m_midiAutoDetect( false ),
@@ -175,7 +175,6 @@ ControllerConnectionDialog::ControllerConnectionDialog( QWidget * _parent,
 	setWindowIcon( embed::getIconPixmap( "setup_audio" ) );
 	setWindowTitle( tr( "Connection Settings" ) );
 	setModal( true );
-
 
 	// Midi stuff
 	m_midiGroupBox = new GroupBox( tr( "MIDI CONTROLLER" ), this );
@@ -198,7 +197,7 @@ connect( m_midiGroupBox->model(), SIGNAL( dataChanged() ),
 	m_midiControllerSpinBox->addTextForValue( 0, "---" );
 	m_midiControllerSpinBox->setLabel( tr( "CONTROLLER" ) );
 	m_midiControllerSpinBox->move( 68, 24 );
-
+	
 
 	m_midiAutoDetectCheckBox =
 			new LedCheckBox( tr("Auto Detect"),
@@ -368,9 +367,9 @@ connect( m_midiGroupBox->model(), SIGNAL( dataChanged() ),
 		}
 
 	if( !cc )
-		{
-			m_midiGroupBox->model()->setValue( true );
-		}
+	{
+		m_midiGroupBox->model()->setValue( true );
+	}
 
 	show();
 }
@@ -381,7 +380,6 @@ connect( m_midiGroupBox->model(), SIGNAL( dataChanged() ),
 ControllerConnectionDialog::~ControllerConnectionDialog()
 {
 	delete m_readablePorts;
-//	delete m_rReadablePorts;
 
 	delete m_midiController;
 }
@@ -393,30 +391,46 @@ void ControllerConnectionDialog::selectController()
 {
 	// Midi
 	if( m_midiGroupBox->model()->value() > 0 )
+	{
+		if( m_midiControllerSpinBox->model()->value() > 0 )
 		{
-			if( m_midiControllerSpinBox->model()->value() > 0 )
-				{
-					MidiCustomController * mc;
-					mc = m_midiController->copyToMidiController( Engine::getSong() );
-					mc->m_midiPort.setName( m_targetModel->fullDisplayName() );
-					m_controller = mc;
-				}
+			MidiController * mc;
+			mc = m_midiController->copyToMidiController( Engine::getSong() );
+	
+			/*
+			if( m_targetModel->getTrack() && 
+					!m_targetModel->getTrack()->displayName().isEmpty() )
+			{
+				mc->m_midiPort.setName( QString( "%1 (%2)" ).
+						arg( m_targetModel->getTrack()->displayName() ).
+						arg( m_targetModel->displayName() ) );
+			}
+			else
+			{
+				mc->m_midiPort.setName( m_targetModel->displayName() );
+			}
+			*/
+			mc->m_midiPort.setName( m_targetModel->fullDisplayName() );
+			m_controller = mc;
 		}
-
+	}
 	// User
-	if( m_userGroupBox->model()->value() > 0 &&
-			Engine::getSong()->controllers().size() )
+	else 
+	{
+		if( m_userGroupBox->model()->value() > 0 && 
+				Engine::getSong()->controllers().size() )
 		{
-			m_controller = Engine::getSong()->controllers().at(
-											 m_userController->model()->value() );
+			m_controller = Engine::getSong()->controllers().at( 
+					m_userController->model()->value() );
 		}
 
-
-	if( m_controller && m_controller->hasModel( m_targetModel ) )
+		if( m_controller && m_controller->hasModel( m_targetModel ) )
 		{
 			QMessageBox::warning(this, tr("LMMS"), tr("Cycle Detected."));
 			return;
 		}
+	
+	}
 
 	accept();
 }
@@ -464,16 +478,23 @@ void ControllerConnectionDialog::midiToggled()
 }
 
 
+
+
 void ControllerConnectionDialog::userToggled()
 {
 	int enabled = m_userGroupBox->model()->value();
-//	m_readablePorts->setEnabled(false);
 	if( enabled != 0 && m_midiGroupBox->model()->value() != 0 )
 	{
 		m_midiGroupBox->model()->setValue( 0 );
 	}
+}
 
-	m_userController->setEnabled( enabled );
+
+
+void ControllerConnectionDialog::userSelected()
+{
+	m_userGroupBox->model()->setValue( 1 );
+	userToggled();
 }
 
 
@@ -482,10 +503,9 @@ void ControllerConnectionDialog::userToggled()
 void ControllerConnectionDialog::autoDetectToggled()
 {
 	if( m_midiAutoDetect.value() )
-		{
-
-			m_midiController->reset();
-		}
+	{
+		m_midiController->reset();
+	}
 }
 
 
@@ -501,10 +521,8 @@ void ControllerConnectionDialog::midiValueChanged()
 			m_readablePorts->updateMenu();
 		}
 	}
-	//RIKIS
-	setLabelText();
-	//RIKIS
 }
+
 
 
 void ControllerConnectionDialog::enableAutoDetect( QAction * _a )
@@ -512,7 +530,7 @@ void ControllerConnectionDialog::enableAutoDetect( QAction * _a )
 	if( _a->isChecked() )
 	{
 		m_midiAutoDetectCheckBox->model()->setValue( true );
-		}
+	}
 }
 
 void ControllerConnectionDialog::setLabelText()
@@ -523,3 +541,6 @@ void ControllerConnectionDialog::setLabelText()
 	m_PitchLabel->setText(QString::number(m_midiController->getMidiPitchbend()));
 	m_ValueLabel->setText(QString::number(m_midiController->getLastValue()));
 }
+
+
+
