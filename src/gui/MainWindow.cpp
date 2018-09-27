@@ -69,13 +69,13 @@
 
 #include "lmmsversion.h"
 
-#if !defined(LMMS_BUILD_WIN32) && !defined(LMMS_BUILD_APPLE) && !defined(LMMS_BUILD_HAIKU) && QT_VERSION >= 0x050000
+#if !defined(LMMS_BUILD_WIN32) && !defined(LMMS_BUILD_APPLE) && !defined(LMMS_BUILD_HAIKU)
 //Work around an issue on KDE5 as per https://bugs.kde.org/show_bug.cgi?id=337491#c21
 void disableAutoKeyAccelerators(QWidget* mainWindow)
 {
 	using DisablerFunc = void(*)(QWidget*);
 	QLibrary kf5WidgetsAddon("KF5WidgetsAddons", 5);
-	DisablerFunc setNoAccelerators = 
+	DisablerFunc setNoAccelerators =
 			reinterpret_cast<DisablerFunc>(kf5WidgetsAddon.resolve("_ZN19KAcceleratorManager10setNoAccelEP7QWidget"));
 	if(setNoAccelerators)
 	{
@@ -96,7 +96,7 @@ MainWindow::MainWindow() :
 	m_metronomeToggle( 0 ),
 	m_session( Normal )
 {
-#if !defined(LMMS_BUILD_WIN32) && !defined(LMMS_BUILD_APPLE) && !defined(LMMS_BUILD_HAIKU) && QT_VERSION >= 0x050000
+#if !defined(LMMS_BUILD_WIN32) && !defined(LMMS_BUILD_APPLE) && !defined(LMMS_BUILD_HAIKU)
 	disableAutoKeyAccelerators(this);
 #endif
 	setAttribute( Qt::WA_DeleteOnClose );
@@ -213,7 +213,7 @@ MainWindow::MainWindow() :
 	vbox->addWidget( w );
 	setCentralWidget( main_widget );
 
-	m_updateTimer.start( 1000 / 20, this );  // 20 fps
+	m_updateTimer.start( 1000 / 60, this );  // 60 fps
 
 	if( ConfigManager::inst()->value( "ui", "enableautosave" ).toInt() )
 	{
@@ -336,7 +336,7 @@ void MainWindow::finalize()
 					Qt::CTRL + Qt::Key_M );
 
 // Prevent dangling separator at end of menu per https://bugreports.qt.io/browse/QTBUG-40071
-#if !(defined(LMMS_BUILD_APPLE) && (QT_VERSION >= 0x050000) && (QT_VERSION < 0x050600))
+#if !(defined(LMMS_BUILD_APPLE) && (QT_VERSION < 0x050600))
 	project_menu->addSeparator();
 #endif
 	project_menu->addAction( embed::getIconPixmap( "exit" ), tr( "&Quit" ),
@@ -417,7 +417,7 @@ void MainWindow::finalize()
 	}
 
 // Prevent dangling separator at end of menu per https://bugreports.qt.io/browse/QTBUG-40071
-#if !(defined(LMMS_BUILD_APPLE) && (QT_VERSION >= 0x050000) && (QT_VERSION < 0x050600))
+#if !(defined(LMMS_BUILD_APPLE) && (QT_VERSION < 0x050600))
 	help_menu->addSeparator();
 #endif
 	help_menu->addAction( embed::getIconPixmap( "icon" ), tr( "About" ),
@@ -561,7 +561,9 @@ void MainWindow::finalize()
 	}
 	// look whether mixer failed to start the audio device selected by the
 	// user and is using AudioDummy as a fallback
-	else if( Engine::mixer()->audioDevStartFailed() )
+	// or the audio device is set to invalid one
+	else if( Engine::mixer()->audioDevStartFailed() || !Mixer::isAudioDevNameValid(
+		ConfigManager::inst()->value( "mixer", "audiodev" ) ) )
 	{
 		// if so, offer the audio settings section of the setup dialog
 		SetupDialog sd( SetupDialog::AudioSettings );
@@ -726,7 +728,7 @@ void MainWindow::clearKeyModifiers()
 
 void MainWindow::saveWidgetState( QWidget * _w, QDomElement & _de )
 {
-	// If our widget is the main content of a window (e.g. piano roll, FxMixer, etc), 
+	// If our widget is the main content of a window (e.g. piano roll, FxMixer, etc),
 	// we really care about the position of the *window* - not the position of the widget within its window
 	if( _w->parentWidget() != NULL &&
 			_w->parentWidget()->inherits( "QMdiSubWindow" ) )
@@ -734,7 +736,7 @@ void MainWindow::saveWidgetState( QWidget * _w, QDomElement & _de )
 		_w = _w->parentWidget();
 	}
 
-	// If the widget is a SubWindow, then we can make use of the getTrueNormalGeometry() method that 
+	// If the widget is a SubWindow, then we can make use of the getTrueNormalGeometry() method that
 	// performs the same as normalGeometry, but isn't broken on X11 ( see https://bugreports.qt.io/browse/QTBUG-256 )
 	SubWindow *asSubWindow = qobject_cast<SubWindow*>(_w);
 	QRect normalGeom = asSubWindow != nullptr ? asSubWindow->getTrueNormalGeometry() : _w->normalGeometry();
@@ -763,7 +765,7 @@ void MainWindow::restoreWidgetState( QWidget * _w, const QDomElement & _de )
 			qMax( _w->minimumHeight(), _de.attribute( "height" ).toInt() ) );
 	if( _de.hasAttribute( "visible" ) && !r.isNull() )
 	{
-		// If our widget is the main content of a window (e.g. piano roll, FxMixer, etc), 
+		// If our widget is the main content of a window (e.g. piano roll, FxMixer, etc),
 		// we really care about the position of the *window* - not the position of the widget within its window
 		if ( _w->parentWidget() != NULL &&
 			_w->parentWidget()->inherits( "QMdiSubWindow" ) )
@@ -773,7 +775,10 @@ void MainWindow::restoreWidgetState( QWidget * _w, const QDomElement & _de )
 		// first restore the window, as attempting to resize a maximized window causes graphics glitching
 		_w->setWindowState( _w->windowState() & ~(Qt::WindowMaximized | Qt::WindowMinimized) );
 
-		_w->resize( r.size() );
+		// Check isEmpty() to work around corrupt project files with empty size
+		if ( ! r.size().isEmpty() ) {
+			_w->resize( r.size() );
+		}
 		_w->move( r.topLeft() );
 
 		// set the window to its correct minimized/maximized/restored state
@@ -862,7 +867,7 @@ void MainWindow::updateRecentlyOpenedProjectsMenu()
 	for( QStringList::iterator it = rup.begin(); it != rup.end(); ++it )
 	{
 		QFileInfo recentFile( *it );
-		if ( recentFile.exists() && 
+		if ( recentFile.exists() &&
 				*it != ConfigManager::inst()->recoveryFile() )
 		{
 			if( recentFile.suffix().toLower() == "mpt" )
@@ -907,15 +912,15 @@ bool MainWindow::saveProject()
 	{
 		return( saveProjectAs() );
 	}
-	else
+	else if( this->guiSaveProject() )
 	{
-		this->guiSaveProject();
 		if( getSession() == Recover )
 		{
 			sessionCleanup();
 		}
+		return true;
 	}
-	return( true );
+	return false;
 }
 
 
@@ -961,14 +966,16 @@ bool MainWindow::saveProjectAs()
 				}
 			}
 		}
-		this->guiSaveProjectAs( fname );
-		if( getSession() == Recover )
+		if( this->guiSaveProjectAs( fname ) )
 		{
-			sessionCleanup();
+			if( getSession() == Recover )
+			{
+				sessionCleanup();
+			}
+			return true;
 		}
-		return( true );
 	}
-	return( false );
+	return false;
 }
 
 
@@ -986,8 +993,7 @@ bool MainWindow::saveProjectAsNewVersion()
 		do 		VersionedSaveDialog::changeFileNameVersion( fileName, true );
 		while 	( QFile( fileName ).exists() );
 
-		this->guiSaveProjectAs( fileName );
-		return true;
+		return this->guiSaveProjectAs( fileName );
 	}
 }
 

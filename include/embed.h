@@ -28,15 +28,15 @@
 #include <QPixmap>
 #include <QtCore/QString>
 
-#include "export.h"
+#include "lmms_export.h"
 #include "lmms_basics.h"
 
 
 namespace embed
 {
 
-QPixmap EXPORT getIconPixmap( const QString&  _name, int _w = -1, int _h = -1 );
-QString EXPORT getText( const char * _name );
+QPixmap LMMS_EXPORT getIconPixmap( const QString&  _name, int _w = -1, int _h = -1 );
+QString LMMS_EXPORT getText( const char * _name );
 
 }
 
@@ -60,11 +60,11 @@ class PixmapLoader
 {
 public:
 	PixmapLoader( const PixmapLoader * _ref ) :
-		m_name( _ref != NULL ? _ref->m_name : QString::null )
+		m_name( _ref != NULL ? _ref->m_name : QString() )
 	{
 	}
 
-	PixmapLoader( const QString & _name = QString::null ) :
+	PixmapLoader( const QString & _name = QString() ) :
 		m_name( _name )
 	{
 	}
@@ -96,7 +96,7 @@ protected:
 class PluginPixmapLoader : public PixmapLoader
 {
 public:
-	PluginPixmapLoader( const QString & _name = QString::null ) :
+	PluginPixmapLoader( const QString & _name = QString() ) :
 		PixmapLoader( _name )
 	{
 	}

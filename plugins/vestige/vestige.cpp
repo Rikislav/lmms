@@ -22,6 +22,10 @@
  *
  */
 
+#include <QtCore/QtGlobal>
+
+#include "VstPlugin.h"
+
 #include "vestige.h"
 
 #include <memory>
@@ -41,7 +45,7 @@
 #include "gui_templates.h"
 #include "InstrumentPlayHandle.h"
 #include "InstrumentTrack.h"
-#include "VstPlugin.h"
+#include "LocaleHelper.h"
 #include "MainWindow.h"
 #include "Mixer.h"
 #include "GuiApplication.h"
@@ -52,6 +56,7 @@
 #include "ToolTip.h"
 #include "FileDialog.h"
 
+
 #include "embed.h"
 
 
@@ -59,7 +64,7 @@
 extern "C"
 {
 
-Plugin::Descriptor PLUGIN_EXPORT vestige_plugin_descriptor =
+Plugin::Descriptor Q_DECL_EXPORT  vestige_plugin_descriptor =
 {
 	STRINGIFY( PLUGIN_NAME ),
 	"VeSTige",
@@ -204,8 +209,8 @@ void vestigeInstrument::loadSettings( const QDomElement & _this )
 
 			if( !( knobFModel[ i ]->isAutomated() || knobFModel[ i ]->controllerConnection() ) )
 			{
-				knobFModel[ i ]->setValue( ( s_dumpValues.at( 2 )).toFloat() );
-				knobFModel[ i ]->setInitValue( ( s_dumpValues.at( 2 )).toFloat() );
+				knobFModel[ i ]->setValue(LocaleHelper::toFloat(s_dumpValues.at(2)));
+				knobFModel[ i ]->setInitValue(LocaleHelper::toFloat(s_dumpValues.at(2)));
 			}
 
 			connect( knobFModel[i], SIGNAL( dataChanged() ), this, SLOT( setParameter() ) );
@@ -360,14 +365,12 @@ void vestigeInstrument::loadFile( const QString & _file )
 
 void vestigeInstrument::play( sampleFrame * _buf )
 {
-	m_pluginMutex.lock();
+	if (!m_pluginMutex.tryLock()) {return;}
 
 	const fpp_t frames = Engine::mixer()->framesPerPeriod();
 
 	if( m_plugin == NULL )
 	{
-		BufferManager::clear( _buf, frames );
-
 		m_pluginMutex.unlock();
 		return;
 	}
@@ -612,7 +615,7 @@ void VestigeInstrumentView::updateMenu( void )
      		QMenu * to_menu = m_selPresetButton->menu();
     		to_menu->clear();
 
-    		QAction *presetActions[list1.size()];
+			QVector<QAction*> presetActions(list1.size());
 
      		for (int i = 0; i < list1.size(); i++) {
 			presetActions[i] = new QAction(this);
@@ -962,7 +965,7 @@ manageVestigeInstrumentView::manageVestigeInstrumentView( Instrument * _instrume
 		if( !hasKnobModel )
 		{
 			sprintf( paramStr, "%d", i);
-			m_vi->knobFModel[ i ] = new FloatModel( (s_dumpValues.at( 2 )).toFloat(),
+			m_vi->knobFModel[ i ] = new FloatModel( LocaleHelper::toFloat(s_dumpValues.at(2)),
 				0.0f, 1.0f, 0.01f, castModel<vestigeInstrument>(), tr( paramStr ) );
 		}
 		connect( m_vi->knobFModel[i], SIGNAL( dataChanged() ), this, SLOT( setParameter() ) );
@@ -1023,7 +1026,7 @@ void manageVestigeInstrumentView::syncPlugin( void )
 		{
 			sprintf( paramStr, "param%d", i );
     			s_dumpValues = dump[ paramStr ].split( ":" );
-			f_value = ( s_dumpValues.at( 2 ) ).toFloat();
+			f_value = LocaleHelper::toFloat(s_dumpValues.at(2));
 			m_vi->knobFModel[ i ]->setAutomatedValue( f_value );
 			m_vi->knobFModel[ i ]->setInitValue( f_value );
 		}
@@ -1163,7 +1166,7 @@ extern "C"
 {
 
 // necessary for getting instance out of shared lib
-PLUGIN_EXPORT Plugin * lmms_plugin_main( Model *, void * _data )
+Q_DECL_EXPORT Plugin * lmms_plugin_main( Model *, void * _data )
 {
 	return new vestigeInstrument( static_cast<InstrumentTrack *>( _data ) );
 }

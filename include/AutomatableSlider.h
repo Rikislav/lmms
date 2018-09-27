@@ -32,11 +32,11 @@
 
 
 
-class EXPORT AutomatableSlider : public QSlider, public IntModelView
+class LMMS_EXPORT AutomatableSlider : public QSlider, public IntModelView
 {
 	Q_OBJECT
 public:
-	AutomatableSlider( QWidget * _parent, const QString & _name = QString::null );
+	AutomatableSlider( QWidget * _parent, const QString & _name = QString() );
 	virtual ~AutomatableSlider();
 
 	bool showStatus()

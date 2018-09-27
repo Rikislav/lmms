@@ -188,6 +188,8 @@ void Song::savePos()
 
 void Song::processNextBuffer()
 {
+	m_vstSyncController.setPlaybackJumped( false );
+
 	// if not playing, nothing to do
 	if( m_playing == false )
 	{
@@ -256,8 +258,19 @@ void Song::processNextBuffer()
 			setToTime(tl->loopBegin());
 			m_playPos[m_playMode].setTicks(
 						tl->loopBegin().getTicks() );
+
+			m_vstSyncController.setAbsolutePosition(
+						tl->loopBegin().getTicks() );
+			m_vstSyncController.setPlaybackJumped( true );
+
 			emit updateSampleTracks();
 		}
+	}
+
+	if( m_playPos[m_playMode].jumped() )
+	{
+		m_vstSyncController.setPlaybackJumped( true );
+		m_playPos[m_playMode].setJumped( false );
 	}
 
 	f_cnt_t framesPlayed = 0;
@@ -313,6 +326,7 @@ void Song::processNextBuffer()
 					setToTimeByTicks(ticks);
 
 					m_vstSyncController.setAbsolutePosition( ticks );
+					m_vstSyncController.setPlaybackJumped( true );
 				}
 			}
 			m_playPos[m_playMode].setTicks( ticks );
@@ -327,8 +341,12 @@ void Song::processNextBuffer()
 				// beginning of the range
 				if( m_playPos[m_playMode] >= tl->loopEnd() )
 				{
-					m_playPos[m_playMode].setTicks( tl->loopBegin().getTicks() );
+					ticks = tl->loopBegin().getTicks();
+					m_playPos[m_playMode].setTicks( ticks );
 					setToTime(tl->loopBegin());
+
+					m_vstSyncController.setAbsolutePosition( ticks );
+					m_vstSyncController.setPlaybackJumped( true );
 				}
 				else if( m_playPos[m_playMode] == tl->loopEnd() - 1 )
 				{
@@ -605,6 +623,7 @@ void Song::setPlayPos( tick_t ticks, PlayModes playMode )
 	m_elapsedMilliSeconds[playMode] += MidiTime::ticksToMilliseconds( ticks - ticksFromPlayMode, getTempo() );
 	m_playPos[playMode].setTicks( ticks );
 	m_playPos[playMode].setCurrentFrame( 0.0f );
+	m_playPos[playMode].setJumped( true );
 
 // send a signal if playposition changes during playback
 	if( isPlaying() )
@@ -996,8 +1015,6 @@ void Song::loadProject( const QString & fileName )
 
 	clearErrors();
 
-	DataFile::LocaleHelper localeHelper( DataFile::LocaleHelper::ModeLoad );
-
 	Engine::mixer()->requestChangeInModel();
 
 	// get the header information from the DOM
@@ -1156,8 +1173,6 @@ void Song::loadProject( const QString & fileName )
 // only save current song as _filename and do nothing else
 bool Song::saveProjectFile( const QString & filename )
 {
-	DataFile::LocaleHelper localeHelper( DataFile::LocaleHelper::ModeSave );
-
 	DataFile dataFile( DataFile::SongProject );
 
 	m_tempoModel.saveSettings( dataFile, dataFile.head(), "bpm" );

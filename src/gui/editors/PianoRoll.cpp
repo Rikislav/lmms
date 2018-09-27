@@ -65,10 +65,6 @@
 
 #include "ChordTable.h"
 
-#if QT_VERSION < 0x040800
-#define MiddleButton MidButton
-#endif
-
 using std::move;
 
 typedef AutomationPattern::timeMap timeMap;
@@ -559,7 +555,7 @@ void PianoRoll::markSemiTone( int i )
 			break;
 		case stmaMarkCurrentSemiTone:
 		{
-			QList<int>::iterator it = qFind( m_markedSemiTones.begin(), m_markedSemiTones.end(), key );
+			QList<int>::iterator it = std::find( m_markedSemiTones.begin(), m_markedSemiTones.end(), key );
 			if( it != m_markedSemiTones.end() )
 			{
 				m_markedSemiTones.erase( it );
@@ -580,7 +576,7 @@ void PianoRoll::markSemiTone( int i )
 				QList<int>::iterator i;
 				for (int ix = 0; ix < aok.size(); ++ix)
 				{
-					i = qFind(m_markedSemiTones.begin(), m_markedSemiTones.end(), aok.at(ix));
+					i = std::find(m_markedSemiTones.begin(), m_markedSemiTones.end(), aok.at(ix));
 					m_markedSemiTones.erase(i);
 				}
 			}
@@ -632,7 +628,7 @@ void PianoRoll::markSemiTone( int i )
 			;
 	}
 
-	qSort( m_markedSemiTones.begin(), m_markedSemiTones.end(), qGreater<int>() );
+	std::sort( m_markedSemiTones.begin(), m_markedSemiTones.end(), std::greater<int>() );
 	QList<int>::iterator new_end = std::unique( m_markedSemiTones.begin(), m_markedSemiTones.end() );
 	m_markedSemiTones.erase( new_end, m_markedSemiTones.end() );
 }
@@ -791,6 +787,12 @@ QColor PianoRoll::noteColor() const
 void PianoRoll::setNoteColor( const QColor & c )
 { m_noteColor = c; }
 
+QColor PianoRoll::noteTextColor() const
+{ return m_noteTextColor; }
+
+void PianoRoll::setNoteTextColor( const QColor & c )
+{ m_noteTextColor = c; }
+
 QColor PianoRoll::barColor() const
 { return m_barColor; }
 
@@ -850,8 +852,8 @@ void PianoRoll::setBackgroundShade( const QColor & c )
 
 
 void PianoRoll::drawNoteRect( QPainter & p, int x, int y,
-				int width, const Note * n, const QColor & noteCol,
-				const QColor & selCol, const int noteOpc, const bool borders )
+				int width, const Note * n, const QColor & noteCol, const QColor & noteTextColor,
+				const QColor & selCol, const int noteOpc, const bool borders, bool drawNoteName )
 {
 	++x;
 	++y;
@@ -862,15 +864,19 @@ void PianoRoll::drawNoteRect( QPainter & p, int x, int y,
 		width = 2;
 	}
 
-	int volVal = qMin( 255, 100 + (int) ( ( (float)( n->getVolume() - MinVolume ) ) /
-			( (float)( MaxVolume - MinVolume ) ) * 155.0f) );
-	float rightPercent = qMin<float>( 1.0f,
-			( (float)( n->getPanning() - PanningLeft ) ) /
-			( (float)( PanningRight - PanningLeft ) ) * 2.0f );
+	// Volume
+	float const volumeRange = static_cast<float>(MaxVolume - MinVolume);
+	float const volumeSpan = static_cast<float>(n->getVolume() - MinVolume);
+	float const volumeRatio = volumeSpan / volumeRange;
+	int volVal = qMin( 255, 100 + static_cast<int>( volumeRatio * 155.0f) );
 
-	float leftPercent = qMin<float>( 1.0f,
-			( (float)( PanningRight - n->getPanning() ) ) /
-			( (float)( PanningRight - PanningLeft ) ) * 2.0f );
+	// Panning
+	float const panningRange = static_cast<float>(PanningRight - PanningLeft);
+	float const leftPanSpan = static_cast<float>(PanningRight - n->getPanning());
+	float const rightPanSpan = static_cast<float>(n->getPanning() - PanningLeft);
+
+	float leftPercent = qMin<float>( 1.0f, leftPanSpan / panningRange * 2.0f );
+	float rightPercent = qMin<float>( 1.0f, rightPanSpan / panningRange * 2.0f );
 
 	QColor col = QColor( noteCol );
 	QPen pen;
@@ -888,9 +894,9 @@ void PianoRoll::drawNoteRect( QPainter & p, int x, int y,
 	// adjust note to make it a bit faded if it has a lower volume
 	// in stereo using gradients
 	QColor lcol = QColor::fromHsv( col.hue(), col.saturation(),
-						volVal * leftPercent, noteOpc );
+				       static_cast<int>(volVal * leftPercent), noteOpc );
 	QColor rcol = QColor::fromHsv( col.hue(), col.saturation(),
-						volVal * rightPercent, noteOpc );
+				       static_cast<int>(volVal * rightPercent), noteOpc );
 
 	QLinearGradient gradient( x, y, x, y + noteHeight );
 	gradient.setColorAt( 0, rcol );
@@ -907,6 +913,36 @@ void PianoRoll::drawNoteRect( QPainter & p, int x, int y,
 	}
 
 	p.drawRect( x, y, noteWidth, noteHeight );
+
+	// Draw note key text
+	if (drawNoteName)
+	{
+		p.save();
+		int const noteTextHeight = static_cast<int>(noteHeight * 0.8);
+		if (noteTextHeight > 6)
+		{
+			QString noteKeyString = getNoteString(n->key());
+
+			QFont noteFont(p.font());
+			noteFont.setPixelSize(noteTextHeight);
+			QFontMetrics fontMetrics(noteFont);
+			QSize textSize = fontMetrics.size(Qt::TextSingleLine, noteKeyString);
+
+			int const distanceToBorder = 2;
+			int const xOffset = borderWidth + distanceToBorder;
+			int const yOffset = (noteHeight + noteTextHeight) / 2;
+
+			if (textSize.width() < noteWidth - xOffset)
+			{
+				p.setPen(noteTextColor);
+				p.setFont(noteFont);
+				QPoint textStart(x + xOffset, y + yOffset);
+
+				p.drawText(textStart, noteKeyString);
+			}
+		}
+		p.restore();
+	}
 
 	// draw the note endmark, to hint the user to resize
 	p.setBrush( col );
@@ -3061,8 +3097,8 @@ void PianoRoll::paintEvent(QPaintEvent * pe )
 				// note
 				drawNoteRect( p, x + WHITE_KEY_WIDTH,
 						y_base - key * KEY_LINE_HEIGHT,
-								note_width, note, noteColor(), selectedNoteColor(),
-							 	noteOpacity(), noteBorders() );
+								note_width, note, noteColor(), noteTextColor(), selectedNoteColor(),
+								noteOpacity(), noteBorders(), drawNoteNames );
 			}
 
 			// draw note editing stuff

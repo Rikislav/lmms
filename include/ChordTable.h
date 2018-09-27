@@ -42,7 +42,7 @@ const int KeyMin = -KeyMax;
 const int KeyDefault = 0;
 
 
-class EXPORT ChordSemiTone : public Model , public JournallingObject
+class LMMS_EXPORT ChordSemiTone : public Model , public JournallingObject
 {
 	Q_OBJECT
 public:
@@ -90,7 +90,7 @@ public:
 	}
 };
 
-class EXPORT Chord : public Model, public JournallingObject, public QVector<ChordSemiTone * >
+class LMMS_EXPORT Chord : public Model, public JournallingObject, public QVector<ChordSemiTone * >
 {
 	Q_OBJECT
 public:
@@ -168,7 +168,7 @@ public:
 
 
 
-class EXPORT ChordTable : public Model, public JournallingObject, public QVector<Chord * >
+class LMMS_EXPORT ChordTable : public Model, public JournallingObject, public QVector<Chord * >
 {
 	Q_OBJECT
 public:

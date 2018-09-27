@@ -40,11 +40,6 @@
 #include "SongEditor.h"
 
 
-#if QT_VERSION < 0x040800
-#define MiddleButton MidButton
-#endif
-
-
 QPixmap * TimeLineWidget::s_posMarkerPixmap = NULL;
 
 TimeLineWidget::TimeLineWidget( const int xoff, const int yoff, const float ppt,
@@ -369,6 +364,7 @@ void TimeLineWidget::mouseMoveEvent( QMouseEvent* event )
 				Engine::getSong()->setToTime(t, Song::Mode_None);
 			}
 			m_pos.setCurrentFrame( 0 );
+			m_pos.setJumped( true );
 			updatePosition();
 			positionMarkerMoved();
 			break;

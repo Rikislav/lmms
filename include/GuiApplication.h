@@ -27,7 +27,7 @@
 
 #include <QtCore/QObject>
 
-#include "export.h"
+#include "lmms_export.h"
 #include "PluginView.h"
 
 class QLabel;
@@ -41,9 +41,9 @@ class PianoRollWindow;
 class ProjectNotes;
 class SongEditorWindow;
 
-class EXPORT GuiApplication : public QObject
+class LMMS_EXPORT GuiApplication : public QObject
 {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	explicit GuiApplication();
 	~GuiApplication();

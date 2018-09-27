@@ -187,7 +187,7 @@ SetupDialog::SetupDialog( ConfigTabs _tab_to_open ) :
 						SLOT( setBufferSize( int ) ) );
 
 	m_bufSizeLbl = new QLabel( bufsize_tw );
-	m_bufSizeLbl->setGeometry( 10, 40, 200, 24 );
+	m_bufSizeLbl->setGeometry( 10, 40, 200, 32 );
 	setBufferSize( m_bufSizeSlider->value() );
 
 	QPushButton * bufsize_reset_btn = new QPushButton(
@@ -812,7 +812,7 @@ SetupDialog::SetupDialog( ConfigTabs _tab_to_open ) :
 	// If no preferred audio device is saved, save the current one
 	QString audioDevName = 
 		ConfigManager::inst()->value( "mixer", "audiodev" );
-	if( audioDevName.length() == 0 )
+	if( m_audioInterfaces->findText(audioDevName) < 0 )
 	{
 		audioDevName = Engine::mixer()->audioDevName();
 		ConfigManager::inst()->setValue(
@@ -908,7 +908,7 @@ SetupDialog::SetupDialog( ConfigTabs _tab_to_open ) :
 
 	QString midiDevName = 
 		ConfigManager::inst()->value( "mixer", "mididev" );
-	if( midiDevName.length() == 0 )
+	if( m_midiInterfaces->findText(midiDevName) < 0 )
 	{
 		midiDevName = Engine::mixer()->midiClientName();
 		ConfigManager::inst()->setValue(
@@ -1053,11 +1053,7 @@ void SetupDialog::accept()
 					QString::number( m_disableAutoQuit ) );
 	ConfigManager::inst()->setValue( "app", "language", m_lang );
 	ConfigManager::inst()->setValue( "ui", "vstembedmethod",
-#if QT_VERSION >= 0x050000
 					m_vstEmbedComboBox->currentData().toString() );
-#else
-					m_vstEmbedComboBox->itemData(m_vstEmbedComboBox->currentIndex()).toString() );
-#endif
 
 
 	ConfigManager::inst()->setWorkingDir(QDir::fromNativeSeparators(m_workingDir));
@@ -1273,7 +1269,7 @@ void SetupDialog::openWorkingDir()
 {
 	QString new_dir = FileDialog::getExistingDirectory( this,
 					tr( "Choose LMMS working directory" ), m_workingDir );
-	if( new_dir != QString::null )
+	if( ! new_dir.isEmpty() )
 	{
 		m_wdLineEdit->setText( new_dir );
 	}
@@ -1284,7 +1280,7 @@ void SetupDialog::openGIGDir()
 	QString new_dir = FileDialog::getExistingDirectory( this,
 				tr( "Choose your GIG directory" ),
 							m_gigDir );
-	if( new_dir != QString::null )
+	if( ! new_dir.isEmpty() )
 	{
 		m_gigLineEdit->setText( new_dir );
 	}
@@ -1295,7 +1291,7 @@ void SetupDialog::openSF2Dir()
 	QString new_dir = FileDialog::getExistingDirectory( this,
 				tr( "Choose your SF2 directory" ),
 							m_sf2Dir );
-	if( new_dir != QString::null )
+	if( ! new_dir.isEmpty() )
 	{
 		m_sf2LineEdit->setText( new_dir );
 	}
@@ -1317,7 +1313,7 @@ void SetupDialog::openVSTDir()
 	QString new_dir = FileDialog::getExistingDirectory( this,
 				tr( "Choose your VST-plugin directory" ),
 							m_vstDir );
-	if( new_dir != QString::null )
+	if( ! new_dir.isEmpty() )
 	{
 		m_vdLineEdit->setText( new_dir );
 	}
@@ -1349,7 +1345,7 @@ void SetupDialog::openArtworkDir()
 	QString new_dir = FileDialog::getExistingDirectory( this,
 				tr( "Choose artwork-theme directory" ),
 							m_artworkDir );
-	if( new_dir != QString::null )
+	if( ! new_dir.isEmpty() )
 	{
 		m_adLineEdit->setText( new_dir );
 	}
@@ -1371,7 +1367,7 @@ void SetupDialog::openLADSPADir()
 	QString new_dir = FileDialog::getExistingDirectory( this,
 				tr( "Choose LADSPA plugin directory" ),
 							m_ladDir );
-	if( new_dir != QString::null )
+	if( ! new_dir.isEmpty() )
 	{
 		if( m_ladLineEdit->text() == "" )
 		{
@@ -1393,7 +1389,7 @@ void SetupDialog::openSTKDir()
 	QString new_dir = FileDialog::getExistingDirectory( this,
 				tr( "Choose STK rawwave directory" ),
 							m_stkDir );
-	if( new_dir != QString::null )
+	if( ! new_dir.isEmpty() )
 	{
 		m_stkLineEdit->setText( new_dir );
 	}
@@ -1410,7 +1406,7 @@ void SetupDialog::openDefaultSoundfont()
 				tr( "Choose default SoundFont" ), m_defaultSoundfont, 
 				"SoundFont2 Files (*.sf2)" );
 	
-	if( new_file != QString::null )
+	if( ! new_file.isEmpty() )
 	{
 		m_sfLineEdit->setText( new_file );
 	}
@@ -1443,7 +1439,7 @@ void SetupDialog::openBackgroundArtwork()
 			tr( "Choose background artwork" ), dir, 
 			"Image Files (" + fileTypes + ")" );
 	
-	if( new_file != QString::null )
+	if( ! new_file.isEmpty() )
 	{
 		m_baLineEdit->setText( new_file );
 	}

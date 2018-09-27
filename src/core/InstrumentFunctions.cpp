@@ -291,6 +291,8 @@ void InstrumentFunctionArpeggio::processNote( NotePlayHandle * _n )
 		return;
 	}
 
+	// Set master note if not playing arp note or it will play as an ordinary note
+	_n->setMasterNote();
 
 	const int selected_arp = m_arpModel.value();
 
@@ -342,8 +344,6 @@ void InstrumentFunctionArpeggio::processNote( NotePlayHandle * _n )
 		if( m_arpModeModel.value() == SortMode &&
 				( ( cur_frame / arp_frames ) % total_range ) / range != (f_cnt_t) _n->index() )
 		{
-			// Set master note if not playing arp note or it will play as an ordinary note
-			_n->setMasterNote();
 			// update counters
 			frames_processed += arp_frames;
 			cur_frame += arp_frames;
@@ -355,9 +355,6 @@ void InstrumentFunctionArpeggio::processNote( NotePlayHandle * _n )
 		{
 			if( 100 * ( (float) rand() / (float)( RAND_MAX + 1.0f ) ) < m_arpSkipModel.value() )
 			{
-				// Set master note to prevent the note to extend over skipped notes
-				// This may only be needed for lb302
-				_n->setMasterNote();
 				// update counters
 				frames_processed += arp_frames;
 				cur_frame += arp_frames;
@@ -529,13 +526,6 @@ void InstrumentFunctionArpeggio::processNote( NotePlayHandle * _n )
 		cur_frame += arp_frames;
 
 		} // end cst.active block
-	}
-
-	// make sure note is handled as arp-base-note, even
-	// if we didn't add a sub-note so far
-	if( m_arpModeModel.value() != FreeMode )
-	{
-		_n->setMasterNote();
 	}
 }
 

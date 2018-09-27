@@ -45,6 +45,9 @@
 #include "Song.h"
 #include "FileDialog.h"
 
+#include "plugin_export.h"
+
+
 #include "ChordTable.h"
 #include "chordtable_editor.h"
 
